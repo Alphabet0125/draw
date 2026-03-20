@@ -1,0 +1,25 @@
+/* =============== Canvas Info Box =============== */
+.canvas-info-box {
+    background: var(--bg-color);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.canvas-info-box p {
+    margin: 5px 0;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.canvas-info-box i {
+    color: var(--primary-color);
+    width: 16px;
+}
+
+.canvas-info-box span {
+    font-weight: 600;
+}

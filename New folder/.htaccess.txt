@@ -1,0 +1,15 @@
+# เพิ่มขนาด upload และ memory
+php_value upload_max_filesize 100M
+php_value post_max_size 100M
+php_value memory_limit 512M
+php_value max_execution_time 300
+php_value max_input_time 300
+
+# ถ้าไม่ได้ผล ลองใช้แบบนี้
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 100M
+    php_value post_max_size 100M
+    php_value memory_limit 512M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>

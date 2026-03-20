@@ -1,0 +1,10 @@
+fileuploads/
+*.pdf
+*.zip
+*.rar
+*.bak
+*.log
+node_modules/
+vendor/
+debug_callback.log debug_oauth.log deploy.log
+.env

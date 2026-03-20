@@ -1,0 +1,92 @@
+รวม Host&Domain Website ทั้งหมด
+lolane.com
+Plesk Control Panel : https://plesk.violin.co.th:8443/
+Username: lolane
+Password: Nih00?u3,Wk15r0f!
+
+FTP:
+Host: plesk.violin.co.th
+port : 21
+Encryption : Use explicit FTP over TLS avaliable
+Username: lolane
+Password: Nih00?u3,Wk15r0f!
+--------------------------------------------------------------------------
+srcgroupcompany.com
+Plesk Control Panel (TH) : https://plesk2.violin.co.th:8443/
+Username: srcgroupcompany
+Password: 3#j6Pvuh4givrpUF
+
+Plesk Control Panel (EN) : https://plesk.violin.co.th:8443/
+Username:srcgroup
+Password:4ewu9Ii%nKcpI1su
+
+FTP:
+Host: plesk.violin.co.th
+Username:srcgroup
+Password:4ewu9Ii%nKcpI1su
+
+
+User&Pass (Google Analitic, Search Console ,API)
+
+User : masterlolane@gmail.com
+Pass : idkfa*99
+--------------------------------------------------------------------------
+
+lolaneacademy.com
+Plesk Control Panel : https://plesk.violin.co.th:8443/
+Username: lolaneacademy
+Password: Gbz5*Rvs7u6bUgoj
+
+FTP:
+Host: plesk.violin.co.th
+Username:lolaneacademy
+Password:Gbz5*Rvs7u6bUgoj
+ 
+Database_User
+Username:lolaneacademy_db
+Password:Gbz5*Rvs7u6bUgoj
+
+
+User&Pass (Google Analitic, Search Console ,API)
+
+User : masterlolaneacademy@gmail.com
+Pass : 20925P@KkRet
+--------------------------------------------------------------------------
+Password (Excel) : Symphony Cloud Service Acceptance
+Pass : CI@36575
+---------------------------------------------------------------------------
+Pixxelpro.net
+Plesk Control Panel : https://plesk2.violin.co.th:8443/
+Username:pixxelpro
+Password:wCvz~o1%5Dzg8Eo
+
+FTP:
+Host: plesk2.violin.co.th
+Username:pixxelpro
+Password:wCvz~o1%5Dzg8Eo
+ 
+
+Database_User
+Username:pixxelpro_db
+Password:wCvz~o1%5Dzg8Eo
+
+User&Pass (Google Analitic, Search Console ,API)
+
+User : masterpixxelpro@gmail.com
+Pass : 20925P@KkRet
+
+--------------------------------------------------------
+lolanezcool.com
+Plesk Control Panel : https://plesk2.violin.co.th:8443/
+Username: lolanezcool
+Password: 9XW6m0r&Yilw^lia
+
+
+FTP: (Trade)
+Host: plesk2.violin.co.th
+Username:zcooldep
+Password:a20@3yQa3
+
+
+
+

@@ -1,0 +1,261 @@
+/* =============== Storage Badge =============== */
+.storage-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.storage-badge.base64 {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.9), rgba(39, 174, 96, 0.9));
+    color: white;
+}
+
+.storage-badge.blob {
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.9), rgba(41, 128, 185, 0.9));
+    color: white;
+}
+
+.storage-badge i {
+    font-size: 0.85rem;
+}
+
+/* =============== File Icon Preview =============== */
+.file-icon-preview {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+/* Image Preview in Card */
+.image-preview {
+    width: 100%;
+    height: 200px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    background: var(--bg-color);
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+
+.image-preview img.loaded,
+.image-preview img[src] {
+    opacity: 1;
+}
+
+.image-preview:hover img {
+    transform: scale(1.1);
+}
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-preview:hover .preview-overlay {
+    opacity: 1;
+}
+
+.preview-overlay i {
+    font-size: 3rem;
+    color: white;
+}
+
+/* PDF Icon with Preview Text */
+.pdf-icon {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(192, 57, 43, 0.1));
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pdf-icon i {
+    font-size: 4rem;
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.pdf-icon .preview-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.pdf-icon:hover {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2));
+    transform: scale(1.02);
+}
+
+/* =============== Preview Modal =============== */
+.preview-modal {
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.preview-container {
+    padding: 20px 0;
+}
+
+/* Image Preview Large */
+.image-preview-large {
+    width: 100%;
+    max-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-color);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.image-preview-large img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.image-preview-large img[style*="opacity: 1"] {
+    opacity: 1;
+}
+
+/* PDF Preview Container */
+.pdf-preview-container {
+    width: 100%;
+    height: 70vh;
+    background: var(--bg-color);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: 2px solid var(--border-color);
+}
+
+.pdf-preview-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Preview Actions */
+.preview-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-download-preview,
+.btn-close-preview {
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-download-preview {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.btn-download-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--shadow-hover);
+}
+
+.btn-close-preview {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+}
+
+.btn-close-preview:hover {
+    background: var(--bg-color);
+    border-color: var(--primary-color);
+}
+
+/* =============== File Card Adjustments =============== */
+.file-card {
+    position: relative;
+    transition: all 0.3s ease, opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* =============== Responsive Preview =============== */
+@media (max-width: 768px) {
+    .preview-modal {
+        max-width: 95%;
+        padding: 20px;
+    }
+    
+    .image-preview-large,
+    .pdf-preview-container {
+        max-height: 60vh;
+        height: 60vh;
+    }
+    
+    .preview-actions {
+        flex-direction: column;
+    }
+    
+    .btn-download-preview,
+    .btn-close-preview {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* =============== Loading Animation =============== */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.image-preview img[src=""],
+.image-preview img:not([src]) {
+    animation: pulse 1.5s ease-in-out infinite;
+}
