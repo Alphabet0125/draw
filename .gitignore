@@ -8,3 +8,7 @@ node_modules/
 vendor/
 debug_callback.log debug_oauth.log deploy.log
 .env
+node_modules/
+vendor/
+debug_callback.log debug_oauth.log
+.env
