@@ -562,14 +562,14 @@ function getStatusIcon(string $status): string {
                         </div>
 
                         <?php if ($f['file_type'] === 'pdf'): ?>
-                            <!-- PDF Placeholder -->
-                            <div class="pdf-thumb-content">
-                                <span class="pdf-thumb-icon">📄</span>
-                                <span class="pdf-thumb-label">PDF</span>
-                                <span class="pdf-thumb-pages"><?= htmlspecialchars($f['file_name']) ?></span>
+                            <!-- ★ PDF Preview — canvas rendered with PDF.js -->
+                            <canvas class="pdf-preview-canvas" data-pdf-id="<?= $f['id'] ?>" style="width:100%;height:100%;object-fit:contain;display:none;"></canvas>
+                            <div class="pdf-thumb-content pdf-thumb-loading" id="pdfload-<?= $f['id'] ?>">
+                                <span class="pdf-thumb-icon" style="animation:spin 1s linear infinite;display:inline-block;">⏳</span>
+                                <span class="pdf-thumb-label" style="font-size:11px;">กำลังโหลด...</span>
                             </div>
                         <?php else: ?>
-                            <!-- ★ Image Preview — โหลดจาก get_thumbnail.php -->
+                            <!-- ★ Image Preview — โหลดจาก get_thumbnail.php (ทุก user เห็นได้) -->
                             <img src="get_thumbnail.php?id=<?= $f['id'] ?>"
                                  alt="<?= htmlspecialchars($f['file_name']) ?>"
                                  loading="lazy"
@@ -637,6 +637,63 @@ function getStatusIcon(string $status): string {
     </div>
 
     <div class="footer">© 2026 Lolane Co., Ltd. | Powered by <span class="footer-brand">ALPHABET</span></div>
+
+    <!-- PDF.js สำหรับ render thumbnail หน้าแรกของ PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <script>
+    // ★★★ PDF THUMBNAIL RENDERER ★★★
+    (function(){
+        var canvases = document.querySelectorAll('.pdf-preview-canvas');
+        if (!canvases.length || typeof pdfjsLib === 'undefined') return;
+
+        // ใช้ IntersectionObserver โหลดเฉพาะที่อยู่ใน viewport (lazy)
+        var observer = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+                if (!entry.isIntersecting) return;
+                observer.unobserve(entry.target);
+                renderPdfThumb(entry.target);
+            });
+        }, { rootMargin: '200px' });
+
+        canvases.forEach(function(canvas){ observer.observe(canvas); });
+
+        function renderPdfThumb(canvas) {
+            var fileId = canvas.dataset.pdfId;
+            var loadingEl = document.getElementById('pdfload-' + fileId);
+
+            pdfjsLib.getDocument({
+                url: 'serve_file.php?id=' + fileId,
+                rangeChunkSize: 65536,
+                withCredentials: true
+            }).promise.then(function(pdf){
+                return pdf.getPage(1);
+            }).then(function(page){
+                var container = canvas.parentElement;
+                var containerW = container.offsetWidth || 300;
+                var containerH = container.offsetHeight || 180;
+                var viewport = page.getViewport({scale: 1});
+                // scale ให้พอดีกับ container
+                var scale = Math.min(containerW / viewport.width, containerH / viewport.height);
+                var scaledVP = page.getViewport({scale: scale});
+                canvas.width  = scaledVP.width;
+                canvas.height = scaledVP.height;
+                return page.render({ canvasContext: canvas.getContext('2d'), viewport: scaledVP }).promise.then(function(){
+                    canvas.style.display = 'block';
+                    if (loadingEl) loadingEl.style.display = 'none';
+                });
+            }).catch(function(){
+                // fallback: แสดง icon PDF
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<span class="pdf-thumb-icon">📄</span><span class="pdf-thumb-label">PDF</span>';
+                }
+            });
+        }
+    })();
+    </script>
+
+    <style>@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }</style>
 
     <script>
     // FILTER ENGINE

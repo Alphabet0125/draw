@@ -2351,7 +2351,9 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
         sessionStrokes[pg] = sessionStrokes[pg].filter(function(s) {
             return s.sovType === undefined;  // keep non-sov
         });
+        // push only OWN shape overlays (ไม่ push ของคนอื่น — PHP จัดการ DELETE+INSERT เฉพาะของตัวเองอยู่แล้ว)
         (shapeOverlays[pg] || []).forEach(function(o) {
+            if (parseInt(o.createdUserId, 10) !== CURRENT_USER_ID_DRAW) return; // skip others'
             sessionStrokes[pg].push({
                 type: 'shape', tool: o.tool, sovType: o.tool,
                 id: o.id, x: o.x, y: o.y, w: o.w, h: o.h,
@@ -2990,7 +2992,8 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
         saveState();
 
         // รวมหน้าที่ต้องบันทึก
-        var toSave=[];
+        var toSave=[];       // pages ที่มี bitmap drawing ต้อง save
+        var strokeOnlyPages=[];  // pages ที่มีแค่ shape/textbox (ไม่มี bitmap)
         for(var p=1;p<=totalPages;p++){
             if(dirtyPages[p]){
                 var dd=getDrawingForPage(p);
@@ -2998,12 +3001,40 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
                     var b=dd;
                     if(b.indexOf(',')>0) b=b.split(',')[1];
                     toSave.push({page:p, data:b});
+                } else {
+                    // หน้านี้มีแค่ shape/textbox overlays — save strokes โดยตรง ไม่ต้อง save bitmap
+                    strokeOnlyPages.push(p);
                 }
             }
         }
 
-        if(toSave.length===0){
+        if(toSave.length===0 && strokeOnlyPages.length===0){
             alert('ยังไม่มีการวาดเพิ่มเติม');
+            return;
+        }
+
+        showProgress('💾 กำลังบันทึก...');
+
+        // save stroke-only pages ก่อน (ไม่ต้องรอ bitmap)
+        strokeOnlyPages.forEach(function(pg){
+            saveTextBoxStrokesForPage(pg, true);
+            saveSovStrokesForPage(pg, true);
+            var stks=(sessionStrokes[pg]||[]).filter(function(s){
+                return s.type==='textbox' || s.tool==='textbox' || s.sovType !== undefined;
+            });
+            fetch('save_strokes.php',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({id:FILE_ID,page:pg,strokes:stks})
+            }).then(function(r){return r.json();}).then(function(sd){
+                if(sd.success){ delete dirtyPages[pg]; if(stks.length>0) mergeSessionStrokesToLayer(pg); }
+            }).catch(function(){});
+        });
+
+        if(toSave.length===0){
+            hideProgress();
+            selTool('hand');
+            alert('✅ บันทึกสำเร็จ!');
             return;
         }
 
@@ -3039,6 +3070,7 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
                 return r.json();
             })
             .then(function(d){
+                var strokePromise;
                 if(d.success){
                     savedDrawings[item.page]=item.data;
                     delete dirtyPages[item.page];
@@ -3046,21 +3078,27 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
                     // ★ sync textboxes + shape overlays into sessionStrokes before POSTing
                     saveTextBoxStrokesForPage(item.page, true);  // skipDirty=true: page was just saved
                     saveSovStrokesForPage(item.page, true);
-                    // ★ POST strokes ของหน้านี้ (ส่งเสมอแม้ว่าจะว่าง เพื่อลบ textbox ที่ถูกลบออกจาก DB)
-                    (function(pg, stks){
-                        fetch('save_strokes.php',{
-                            method:'POST',
-                            headers:{'Content-Type':'application/json'},
-                            body:JSON.stringify({id:FILE_ID,page:pg,strokes:stks})
-                        }).then(function(r){return r.json();}).then(function(sd){
-                            if(sd.success && stks.length>0){ mergeSessionStrokesToLayer(pg); }
-                        }).catch(function(){});
-                    })(item.page, (sessionStrokes[item.page]||[]).slice());
+                    var pg=item.page;
+                    // ส่งเฉพาะ textbox+sov strokes เท่านั้น (path strokes บันทึกใน bitmap แล้ว)
+                    var stks=(sessionStrokes[item.page]||[]).filter(function(s){
+                        return s.type==='textbox' || s.tool==='textbox' || s.sovType !== undefined;
+                    });
                     successCount++;
+                    // ★ รอ save_strokes.php เสร็จก่อนไปหน้าถัดไป (กัน race condition)
+                    strokePromise = fetch('save_strokes.php',{
+                        method:'POST',
+                        headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify({id:FILE_ID,page:pg,strokes:stks})
+                    }).then(function(r){return r.json();}).then(function(sd){
+                        if(sd.success && stks.length>0){ mergeSessionStrokesToLayer(pg); }
+                    }).catch(function(){});
                 } else {
                     console.error('Save error page '+item.page+':', d);
                     failedPages.push(item.page);
+                    strokePromise = Promise.resolve();
                 }
+                return strokePromise;
+            }).then(function(){
                 idx++;
                 next();
             })
@@ -3090,7 +3128,11 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
         dc.style.height=img.naturalHeight+'px';
         document.getElementById('canvasSize').textContent=img.naturalWidth+'×'+img.naturalHeight+' px';
         applyZoom();
-        applySavedDrawing(1);
+        // ★ โหลด bitmap แล้วต่อด้วย shape/textbox overlays จาก DB
+        applySavedDrawing(1, function(){
+            loadTextBoxesFromStrokes(1);
+            loadSovFromStrokes(1);
+        });
     }
 
     function getDrawingForPage(pn){
@@ -3126,6 +3168,39 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
             return;
         }
 
+        // ★ sync overlays ก่อนตัดสินใจ path
+        saveTextBoxStrokesForPage(1, true);
+        saveSovStrokesForPage(1, true);
+        var pgStks1=(sessionStrokes[1]||[]).filter(function(s){
+            return s.type==='textbox' || s.tool==='textbox' || s.sovType !== undefined;
+        });
+
+        // ★ ถ้าไม่มี pen strokes ใหม่บน canvas (แค่ shape/textbox) → save strokes โดยตรง
+        // pageDrawings[1].length <= 1 หมายความว่าไม่มี saveState() ถูกเรียก = ไม่มี pen strokes ใหม่
+        var hasPenStrokes = pageDrawings[1] && pageDrawings[1].length > 1;
+        if(!hasPenStrokes){
+            fetch('save_strokes.php',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({id:FILE_ID,page:1,strokes:pgStks1})
+            }).then(function(r){return r.json();}).then(function(sd){
+                if(sd.success){
+                    delete dirtyPages[1];
+                    if(pgStks1.length>0){ mergeSessionStrokesToLayer(1); }
+                    selTool('hand');
+                    alert('✅ บันทึกสำเร็จ!');
+                } else {
+                    console.error('Save strokes error:', sd);
+                    alert('❌ บันทึกไม่สำเร็จ\n' + (sd.error||''));
+                }
+            }).catch(function(err){
+                console.error('Fetch error:', err);
+                alert('❌ บันทึกไม่สำเร็จ\nError: '+err.message);
+            });
+            return;
+        }
+
+        // ★ มี pen strokes ใหม่ → save bitmap ก่อน แล้วค่อย save strokes
         var drawingBase64=dc.toDataURL('image/png').split(',')[1];
 
         fetch('save_drawing.php',{
@@ -3141,21 +3216,19 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
             if(d.success){
                 savedDrawings[1]=drawingBase64;
                 delete dirtyPages[1];
-                delete drawTimestamps[1];  // ★ reset ชื่อผู้วาดกลับเป็นข้อมูลจาก DB
-                // ★ sync textboxes + shape overlays into sessionStrokes before POSTing
-                saveTextBoxStrokesForPage(1, true);  // skipDirty=true: page was just saved
-                saveSovStrokesForPage(1, true);
-                // ★ POST strokes ของหน้า 1 (ส่งเสมอแม้ว่าจะว่าง เพื่อลบ textbox ที่ถูกลบออกจาก DB)
-                var pgStks1 = (sessionStrokes[1]||[]).slice();
-                fetch('save_strokes.php',{
+                delete drawTimestamps[1];
+                // ★ รอ save_strokes.php เสร็จก่อนแจ้งสำเร็จ (กัน race condition)
+                return fetch('save_strokes.php',{
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
                     body:JSON.stringify({id:FILE_ID,page:1,strokes:pgStks1})
                 }).then(function(r){return r.json();}).then(function(sd){
                     if(sd.success && pgStks1.length>0){ mergeSessionStrokesToLayer(1); }
-                }).catch(function(){});
-                selTool('hand');
-                alert('✅ บันทึกสำเร็จ!');
+                }).catch(function(){})
+                .then(function(){
+                    selTool('hand');
+                    alert('✅ บันทึกสำเร็จ!');
+                });
             } else {
                 console.error('Save error:', d);
                 alert('❌ บันทึกไม่สำเร็จ\n' + (d.error||'') + (d.detail ? '\n'+d.detail : ''));
@@ -4078,9 +4151,10 @@ $dataSrc = 'serve_file.php?id=' . $fileId;
         if (!sessionStrokes[pg]) sessionStrokes[pg] = [];
         // filter non-textbox
         sessionStrokes[pg] = sessionStrokes[pg].filter(function(s){ return s.tool !== 'textbox' && s.type !== 'textbox'; });
-        // push all current textboxes
+        // push only OWN textboxes (ไม่ push ของคนอื่น — PHP จัดการ DELETE+INSERT เฉพาะของตัวเองอยู่แล้ว)
         var boxes = textBoxes[pg] || [];
         boxes.forEach(function(b) {
+            if (parseInt(b.createdUserId, 10) !== CURRENT_USER_ID_DRAW) return; // skip others'
             sessionStrokes[pg].push({
                 type: 'textbox', tool: 'textbox',
                 id: b.id, x: b.x, y: b.y, w: b.w, h: b.h,

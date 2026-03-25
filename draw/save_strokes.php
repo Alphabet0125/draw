@@ -35,17 +35,17 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
 
-    // ★ ลบ textbox และ shape overlay strokes เก่าของหน้านี้ก่อนเสมอ แล้วค่อย insert ชุดปัจจุบัน
-    // (เพื่อให้การลบ textbox/shape ถูกบันทึกอย่างถูกต้อง)
+    // ★ ลบเฉพาะ textbox/shape strokes ของ user ปัจจุบันเท่านั้น
+    // (ไม่ลบของคนอื่น เพื่อไม่ให้ annotation ของคนอื่นหาย)
     $delStmt = $pdo->prepare(
         "DELETE FROM drawing_strokes
-         WHERE upload_id = :fid AND page_number = :page
+         WHERE upload_id = :fid AND page_number = :page AND user_id = :uid
          AND (
              JSON_UNQUOTE(JSON_EXTRACT(stroke_json, '\$.type')) = 'textbox'
              OR JSON_UNQUOTE(JSON_EXTRACT(stroke_json, '\$.sovType')) IS NOT NULL
          )"
     );
-    $delStmt->execute([':fid' => $fileId, ':page' => $page]);
+    $delStmt->execute([':fid' => $fileId, ':page' => $page, ':uid' => $userId]);
 
     if (count($strokes) > 0) {
         $stmt = $pdo->prepare(

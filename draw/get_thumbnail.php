@@ -14,10 +14,11 @@ if (!$fileId) {
     exit;
 }
 
+// ★ ไม่จำกัด user_id เพื่อให้ทุก user เห็น thumbnail ของไฟล์ทั้งหมดได้
 $stmt = $pdo->prepare(
-    "SELECT file_mime, file_type, file_path, file_data FROM uploads WHERE id = :id AND user_id = :uid"
+    "SELECT file_mime, file_type, file_path, file_data FROM uploads WHERE id = :id"
 );
-$stmt->execute([':id' => $fileId, ':uid' => $userId]);
+$stmt->execute([':id' => $fileId]);
 $file = $stmt->fetch();
 
 if (!$file || (empty($file['file_data']) && empty($file['file_path']))) {

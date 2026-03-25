@@ -38,6 +38,14 @@ if (!$accessToken) {
     exit;
 }
 
+// ——— สร้าง base URL จาก request จริง (ไม่ hardcode path) ———
+$scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
+// __FILE__ = .../draw/send_email_api.php  → dirname = .../draw
+// สร้าง path จาก SCRIPT_NAME ของไฟล์นี้แล้วตัด filename ออก → ได้ /draw
+$scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/draw'), '/');
+$baseUrl  = $scheme . '://' . $host . $scriptDir;
+
 // ——— ดึงชื่อไฟล์เพื่อแนบใน body (ถ้ามี) ———
 $fileLink = '';
 if ($fileId) {
@@ -45,9 +53,9 @@ if ($fileId) {
     $fst->execute([':id' => $fileId]);
     $fname = $fst->fetchColumn();
     if ($fname) {
+        $viewUrl  = $baseUrl . '/view_file.php?id=' . $fileId;
         $fileLink = '<p style="margin-top:16px;font-size:12px;color:#888;">📎 ไฟล์: <strong>' . htmlspecialchars($fname) . '</strong><br>'
-                  . 'ดูไฟล์: <a href="http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/sitti/draw/view_file.php?id=' . $fileId . '">'
-                  . 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/sitti/draw/view_file.php?id=' . $fileId . '</a></p>';
+                  . 'ดูไฟล์: <a href="' . $viewUrl . '">' . $viewUrl . '</a></p>';
     }
 }
 
